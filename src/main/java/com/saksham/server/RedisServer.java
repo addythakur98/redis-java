@@ -6,6 +6,8 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.saksham.store.DataStore;
+
 public class RedisServer {
     private final int port;
 
@@ -18,10 +20,12 @@ public class RedisServer {
             ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
 
             System.out.println("Listening on port : " + port);
+            
+            DataStore store = new DataStore();
 
             while (true) {
                 Socket client = serverSocket.accept();          // wait for the next client
-                executor.submit(new ClientHandler(client));     // hand it to a new virtual thread
+                executor.submit(new ClientHandler(client,store));     // hand it to a new virtual thread
             }
         }
     }

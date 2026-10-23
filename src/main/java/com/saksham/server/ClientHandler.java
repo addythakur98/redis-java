@@ -2,6 +2,7 @@ package com.saksham.server;
 
 import com.saksham.protocol.RespParser;
 import com.saksham.protocol.RespWriter;
+import com.saksham.store.DataStore;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -13,8 +14,10 @@ import java.util.List;
 
 public class ClientHandler implements Runnable {
     private final Socket client;
-    public ClientHandler(Socket client){
+    private final DataStore store;
+    public ClientHandler(Socket client,DataStore store){
         this.client=client;
+        this.store=store;
     }
     @Override
     public void run() {
@@ -25,11 +28,10 @@ public class ClientHandler implements Runnable {
             while (true) {
                 List<String> command = RespParser.readCommand(in);
                 if (command == null) break;                 // client disconnected
-                if (command.isEmpty()) continue;            // blank line: ignore
+                if (command.isEmpty() || command.get(0).isEmpty()) continue;            // blank line: ignore
 
                 out.write(handle(command));
                 out.flush();
-                if (command.isEmpty() || command.get(0).isEmpty()) continue;
             }
         } catch (IOException e) {
             System.out.println("Client error: " + e.getMessage());
@@ -49,6 +51,31 @@ public class ClientHandler implements Runnable {
                     return RespWriter.error("ERR wrong number of arguments for 'echo' command");
                 return RespWriter.bulkyString(command.get(1));
 
+            case "SET":
+                if (command.size()!=3)
+                    return RespWriter.error("ERR wrong number of arguments for 'set' command");
+                store.set(command.get(1),command.get(2));
+                return RespWriter.simpleString("OK");
+
+            case "GET":
+                if (command.size()!=2)
+                    return RespWriter.error("ERR wrong number of arguments for 'get' command");
+                String value=store.get(command.get(1));
+                if (value==null) return RespWriter.nullBulk();
+                return RespWriter.bulkyString(value);
+
+            case "DEL":
+                if (command.size()<2)
+                    return RespWriter.error("ERR wrong number of arguments for 'del' command");
+                int deleted=0;
+                for (int i=1;i<command.size();i++) if (store.delete(command.get(i))) deleted++;
+                return RespWriter.integer(deleted);
+            case "EXISTS":
+                if (command.size()<2)
+                    return RespWriter.error("ERR wrong number of arguments for 'exists' command");
+                int found=0;
+                for (int i=1;i<command.size();i++) if (store.exists(command.get(i))) found++;
+                return RespWriter.integer(found);
             default:
                 return RespWriter.error("ERR unknown command '" + command.get(0) + "'");
         }
