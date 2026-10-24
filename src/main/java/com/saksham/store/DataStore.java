@@ -25,6 +25,10 @@ public class DataStore {
         return e;
     }
 
+    public int size() {
+        return map.size();
+    }
+
     public void set(String key, String value) {
         map.put(key, new Entry(value, -1));               // plain SET clears any old TTL
     }

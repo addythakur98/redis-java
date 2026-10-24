@@ -105,6 +105,9 @@ public class ClientHandler implements Runnable {
                 }
                 return RespWriter.integer(store.expire(command.get(1), seconds) ? 1 : 0);
 
+            case "DBSIZE":
+                return RespWriter.integer(store.size());
+            
             case "TTL":
                 if (command.size()!=2) return RespWriter.error("ERR wrong number of arguments for 'ttl' command");
                 long data=store.ttl(command.get(1));

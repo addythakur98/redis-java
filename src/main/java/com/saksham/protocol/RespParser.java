@@ -23,11 +23,11 @@ public class RespParser {
 
     public static List<String> readCommand(InputStream in) throws IOException {
         String first = readLine(in);
+        if (first == null) return null;      // client disconnected
         if (!first.startsWith("*")) {
             // inline command, e.g. "PING" or "ECHO hi": split on spaces
             return new ArrayList<>(List.of(first.trim().split("\\s+")));
         }
-        if (first == null) return null;      // client disconnected
 
         int count = Integer.parseInt(first.substring(1));
         List<String> parts = new ArrayList<>();
