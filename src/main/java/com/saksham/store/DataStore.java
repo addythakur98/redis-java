@@ -25,6 +25,16 @@ public class DataStore {
         return e;
     }
 
+    public void setWithExpireAt(String key, String value, long expiresAtMs) {
+        map.put(key, new Entry(value, expiresAtMs));
+    }
+
+    public boolean expireAt(String key, long expiresAtMs) {
+        Entry e = getAlive(key);
+        if (e == null) return false;
+        return map.replace(key, e, new Entry(e.value(), expiresAtMs));
+    }
+
     public int size() {
         return map.size();
     }
@@ -34,7 +44,7 @@ public class DataStore {
     }
 
     public void setWithTtl(String key, String value, long ttlMillis) {
-        map.put(key, new Entry(value, System.currentTimeMillis() + ttlMillis));
+        setWithExpireAt(key, value, System.currentTimeMillis() + ttlMillis);
     }
 
     public String get(String key) {
@@ -53,10 +63,7 @@ public class DataStore {
 
     // EXPIRE key seconds → true if the key exists and the timeout was set
     public boolean expire(String key, long seconds) {
-        Entry e = getAlive(key);
-        if (e == null) return false;
-        Entry updated = new Entry(e.value(), System.currentTimeMillis() + seconds * 1000);
-        return map.replace(key, e, updated);              // only if nobody changed it meanwhile
+        return expireAt(key, System.currentTimeMillis() + seconds * 1000);
     }
 
     // TTL key → seconds left, -1 if no expiry, -2 if the key doesn't exist

@@ -1,5 +1,6 @@
 package com.saksham.protocol;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -18,7 +19,8 @@ public class RespParser {
             }
             sb.append((char) b);
         }
-        return null;                         // stream ended: client disconnected
+        if (sb.length() > 0) throw new EOFException("truncated line");   // stream ended mid-line
+        return null;                                                      // clean end: client gone
     }
 
     public static List<String> readCommand(InputStream in) throws IOException {
@@ -35,6 +37,7 @@ public class RespParser {
             String lenLine = readLine(in);
             int length = Integer.parseInt(lenLine.substring(1));
             byte[] data = in.readNBytes(length);
+            if (data.length < length) throw new EOFException("truncated value");
             in.readNBytes(2);
             parts.add(new String(data, StandardCharsets.UTF_8));
         }

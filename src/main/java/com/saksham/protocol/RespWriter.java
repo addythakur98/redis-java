@@ -1,6 +1,7 @@
 package com.saksham.protocol;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class RespWriter {
     public static byte[] simpleString(String s){
@@ -18,5 +19,14 @@ public class RespWriter {
     }
     public static byte[] integer(long n){
         return (":"+n+"\r\n").getBytes(StandardCharsets.UTF_8);
+    }
+    public static byte[] command(List<String> parts) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("*").append(parts.size()).append("\r\n");
+        for (String p : parts) {
+            int len = p.getBytes(StandardCharsets.UTF_8).length;
+            sb.append("$").append(len).append("\r\n").append(p).append("\r\n");
+        }
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 }
